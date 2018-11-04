@@ -12,21 +12,34 @@ else:
     import tkinter.font as tkFont
 
 """
-Using pack() to manager the layout of tk window
-expand: YES NO
-fill: X Y BOTH NONE
+pack布局：
+expand − When set to true, widget expands to fill any space not otherwise used 
+in widget's parent.
+
+fill − Determines whether widget fills any extra space allocated to it by the 
+packer, or keeps its own minimal dimensions: 
+NONE (default),
+X (fill only horizontally)
+Y (fill only vertically)
+BOTH (fill both horizontally and vertically).
+
+side − Determines which side of the parent widget packs against: 
+    TOP (default), BOTTOM, LEFT, or RIGHT.
+
+如果exand设置为No, fill就不会生效
 """
 root = Tk()
 
-# Change the default font to the font you like
 #print(tkFont.families())
 default_font = tkFont.nametofont("TkDefaultFont")
 default_font.configure(family='微软雅黑', size=10)
 
+w = 800
+h = 480
+h_notebook = 100
 root.title('Main Window of ICO')
-root.resizable(width=False, height=False)
-root.geometry('800x480+200+100')
-root.minsize(800, 480)
+#root.resizable(width=False, height=False)
+root.geometry('%dx%d+200+100' % (w, h))
 # replace the tkinter ico
 #root.iconbitmap('c:\\test\\48X48_tk_logo.ico')
 #root.rowconfigure(0, weight=1)
@@ -42,19 +55,20 @@ root.option_add("*Background", "light blue")
 # use gold/black for selections
 root.option_add("*selectBackground", "gold")
 root.option_add("*selectForeground", "black")
-# the root window was already created, so we have to update it ourselves
+# the root window was already created, so we
+# have to update it ourselves
 root.config(background="light blue")
 
-frame1 = Frame(root, height=480, width=600, relief=RIDGE, borderwidth=0)
+frame1 = Frame(root, width=w*3/4, relief=RIDGE, borderwidth=0)
 frame1.pack(fill=BOTH, expand=YES, side=LEFT)
 
-frame1_1 = Frame(frame1, height=100, width=600, relief=RIDGE, borderwidth=0)
-frame1_1.pack(fill=NONE, expand=False, side=TOP)
+frame1_1 = Frame(frame1, height=h_notebook, relief=RIDGE, borderwidth=2)
+frame1_1.pack(fill=BOTH, expand=YES, side=TOP)
 # Notebook
 # padding: the distance away from the parent frame
-note = Notebook(frame1_1, height=100, width=600)
+note = Notebook(frame1_1)
 note.enable_traversal()
-note.pack(side=LEFT, fill=X)
+note.pack(fill=BOTH, expand=YES, side=LEFT)
 
 tab_main = Frame(note)
 tab_power = Frame(note)
@@ -76,19 +90,41 @@ note.add(tab_perf, text="  Perf  ")
 note.add(tab_stab, text="  Stablility  ")
 note.add(tab_log, text="  Log Function  ")
 
-frame1_2 = Frame(frame1, height=300, width=600, relief=RIDGE, borderwidth=1)
-frame1_2.pack(fill=BOTH, ipadx=2, ipady=2, expand=False, side=TOP)
-#Button(frame1_2, text ='frame1_2 button').pack(side=LEFT, expand=Y)
+frame1_2 = Frame(frame1, relief=RIDGE, borderwidth=1)
+frame1_2.pack(fill=BOTH, expand=True, side=TOP, ipadx=2, ipady=2)
+text = Text(frame1_2, wrap='word')
+ybar = Scrollbar(frame1_2, orient=VERTICAL, command=text.yview )
+text.configure(yscrollcommand=ybar.set)
+text.pack(side=LEFT, expand=True, fill=BOTH)
+ybar.pack(side=RIGHT, fill=Y)
 
-frame1_3 = Frame(frame1, height=80, width=600, relief=RIDGE, borderwidth=0)
-frame1_3.pack(fill=BOTH, ipadx=2, ipady=2, expand=False, side=TOP)
+frame1_3 = Frame(frame1, relief=RIDGE, borderwidth=0)
+frame1_3.pack(fill=BOTH, expand=False, side=TOP)
 # LogPath Entry
-Label(frame1_3, text=" Log Path: ").pack(side=LEFT)#第一行
+Label(frame1_3, text=" Log Path: ").pack(fill=NONE, expand=False, side=LEFT)
 entry_logpath = Entry(frame1_3)
-entry_logpath.pack(side=LEFT, fill=X)
+entry_logpath.pack(fill=X, expand=True, side=LEFT)
+Label(frame1_3, text="     ").pack(fill=NONE, expand=False, side=LEFT)
 
-frame2 = Frame(root, height=480, width=200, relief=RIDGE, borderwidth=1)
-frame2.pack(fill=NONE, ipadx=2, ipady=2, expand=False, side=RIGHT)
+frame2 = Frame(root, relief=RIDGE, borderwidth=1)
+frame2.pack(fill=BOTH, ipadx=2, ipady=2, expand=False, side=RIGHT)
+listbox_frame2 = Listbox(frame2)
+ybar_frame2 = Scrollbar(frame2, orient=VERTICAL, command=listbox_frame2.yview)
+listbox_frame2.configure(yscrollcommand=ybar_frame2.set)
+listbox_frame2.pack( side=LEFT, expand=True, fill=BOTH)
+ybar_frame2.pack( side=RIGHT, fill=Y)
+# test
+listbox_frame2.insert(1, "Python")
+listbox_frame2.insert(2, "Perl")
+listbox_frame2.insert(3, "C")
+listbox_frame2.insert(4, "PHP")
+listbox_frame2.insert(5, "JSP")
+listbox_frame2.insert(6, "Ruby")
+
+#frame3 = Frame(root, relief=RIDGE, borderwidth=1)
+#frame3.pack(fill=BOTH, ipadx=2, ipady=2, expand=True, side=BOTTOM)
+#label = Label(frame3, text='status', relief=SUNKEN,anchor=W)  # anchor left align W -- WEST
+#label.pack(side=BOTTOM,fill=X)
 
 root.mainloop()
 exit()
