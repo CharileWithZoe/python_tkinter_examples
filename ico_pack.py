@@ -12,9 +12,11 @@ else:
     import tkinter.font as tkFont
 
 """
-pack布局：
+pack layout：
 expand − When set to true, widget expands to fill any space not otherwise used 
 in widget's parent.
+     It used when the window trun to big size, set this to NO if you don't want to
+change the size of the widget
 
 fill − Determines whether widget fills any extra space allocated to it by the 
 packer, or keeps its own minimal dimensions: 
@@ -25,8 +27,6 @@ BOTH (fill both horizontally and vertically).
 
 side − Determines which side of the parent widget packs against: 
     TOP (default), BOTTOM, LEFT, or RIGHT.
-
-如果exand设置为No, fill就不会生效
 """
 root = Tk()
 
@@ -40,6 +40,8 @@ h_notebook = 100
 root.title('Main Window of ICO')
 #root.resizable(width=False, height=False)
 root.geometry('%dx%d+200+100' % (w, h))
+# Set the minum size of the window
+root.minsize(w, h)
 # replace the tkinter ico
 #root.iconbitmap('c:\\test\\48X48_tk_logo.ico')
 #root.rowconfigure(0, weight=1)
@@ -59,14 +61,26 @@ root.option_add("*selectForeground", "black")
 # have to update it ourselves
 root.config(background="light blue")
 
+# For logpath notebook and text window
 frame1 = Frame(root, width=w*3/4, relief=RIDGE, borderwidth=0)
 frame1.pack(fill=BOTH, expand=YES, side=LEFT)
 
-frame1_1 = Frame(frame1, height=h_notebook, relief=RIDGE, borderwidth=2)
-frame1_1.pack(fill=BOTH, expand=YES, side=TOP)
+# For logpath and notebook
+frame1_1 = Frame(frame1, relief=RIDGE, borderwidth=0)
+frame1_1.pack(fill=BOTH, expand=NO, side=TOP)
+
+frame_logpath = Frame(frame1_1, relief=RIDGE, borderwidth=2)
+frame_logpath.pack(fill=X, expand=NO, side=TOP, ipady=5)
+frame_notebook = Frame(frame1_1, relief=RIDGE, borderwidth=2)
+frame_notebook.pack(fill=BOTH, expand=NO, side=TOP)
+
+Label(frame_logpath, text=" Log Path: ").pack(fill=NONE, expand=False, side=LEFT)
+entry_logpath = Entry(frame_logpath)
+entry_logpath.pack(fill=X, expand=YES, side=LEFT)
+Label(frame_logpath, text="     ").pack(fill=NONE, expand=False, side=LEFT)
 # Notebook
 # padding: the distance away from the parent frame
-note = Notebook(frame1_1)
+note = Notebook(frame_notebook)
 note.enable_traversal()
 note.pack(fill=BOTH, expand=YES, side=LEFT)
 
@@ -91,27 +105,19 @@ note.add(tab_stab, text="  Stablility  ")
 note.add(tab_log, text="  Log Function  ")
 
 frame1_2 = Frame(frame1, relief=RIDGE, borderwidth=1)
-frame1_2.pack(fill=BOTH, expand=True, side=TOP, ipadx=2, ipady=2)
+frame1_2.pack(fill=BOTH, expand=YES, side=TOP, ipadx=2, ipady=2)
 text = Text(frame1_2, wrap='word')
 ybar = Scrollbar(frame1_2, orient=VERTICAL, command=text.yview )
 text.configure(yscrollcommand=ybar.set)
-text.pack(side=LEFT, expand=True, fill=BOTH)
+text.pack(side=LEFT, expand=YES, fill=BOTH)
 ybar.pack(side=RIGHT, fill=Y)
 
-frame1_3 = Frame(frame1, relief=RIDGE, borderwidth=0)
-frame1_3.pack(fill=BOTH, expand=False, side=TOP)
-# LogPath Entry
-Label(frame1_3, text=" Log Path: ").pack(fill=NONE, expand=False, side=LEFT)
-entry_logpath = Entry(frame1_3)
-entry_logpath.pack(fill=X, expand=True, side=LEFT)
-Label(frame1_3, text="     ").pack(fill=NONE, expand=False, side=LEFT)
-
 frame2 = Frame(root, relief=RIDGE, borderwidth=1)
-frame2.pack(fill=BOTH, ipadx=2, ipady=2, expand=False, side=RIGHT)
+frame2.pack(fill=BOTH, ipadx=2, ipady=2, expand=NO, side=RIGHT)
 listbox_frame2 = Listbox(frame2)
 ybar_frame2 = Scrollbar(frame2, orient=VERTICAL, command=listbox_frame2.yview)
 listbox_frame2.configure(yscrollcommand=ybar_frame2.set)
-listbox_frame2.pack( side=LEFT, expand=True, fill=BOTH)
+listbox_frame2.pack( side=LEFT, expand=YES, fill=BOTH)
 ybar_frame2.pack( side=RIGHT, fill=Y)
 # test
 listbox_frame2.insert(1, "Python")
