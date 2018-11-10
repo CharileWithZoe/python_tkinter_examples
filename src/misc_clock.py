@@ -10,7 +10,7 @@ if sys.version_info < (3,0,0):
     from Tkinter import *
     from ttk import * 
     import tkFont
-    import Tkinter.tkFileDialog as FileDiag
+    import tkFileDialog as FileDiag
 else:
     sys.stdout.write("***python3\n")
     from tkinter import *

@@ -5,7 +5,7 @@ if sys.version_info < (3,0,0):
     from Tkinter import *
     from ttk import * 
     import tkFont
-    import Tkinter.tkFileDialog as FileDiag
+    import tkFileDialog as FileDiag
 else:
     sys.stdout.write("***python3\n")
     from tkinter import *
@@ -50,8 +50,10 @@ class MainWindowICO:
         frame_notebook.pack(fill=BOTH, expand=NO, side=TOP)
         
         Label(frame_logpath, text=" Log Path: ").pack(fill=NONE, expand=False, side=LEFT)
-        self.entry_logpath = Entry(frame_logpath)
-        self.entry_logpath.pack(fill=X, expand=YES, side=LEFT)
+        #self.entry_logpath = Entry(frame_logpath)
+        #self.entry_logpath.pack(fill=X, expand=YES, side=LEFT)
+        self.combobox_logpath = Combobox(frame_logpath)
+        self.combobox_logpath.pack(fill=X, expand=YES, side=LEFT)
         self.fileName = ""
         button_browse = Button(frame_logpath, text ='Select..',
                                command=self.button_browse_callback)
