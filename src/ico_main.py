@@ -5,24 +5,24 @@ import threading, time
 import re
 import sys
 import os
-import tkMessageBox
-import tkFileDialog
 import subprocess
-import Queue
 import json
+from utils import *
 
 if sys.version_info < (3,0,0):
-    sys.stdout.write("***python2\n")
+    info("***python2")
     from Tkinter import *
     from ttk import * 
     import tkFont
     import tkFileDialog as FileDiag
+    import Queue
 else:
-    sys.stdout.write("***python3\n")
+    info("***python3")
     from tkinter import *
     from tkinter.ttk import *
     import tkinter.font as tkFont
     import tkinter.filedialog as FileDiag
+    import queue as Queue
 
 script_path = os.path.dirname(__file__)
 if script_path:
@@ -53,6 +53,8 @@ class MainWindowICO:
         self.master = master
         self.general_setting(master)
 
+        self.pre_init()
+
         # For logpath notebook and text window
         frame1 = Frame(self.master, width=self.w*3/4, relief=RIDGE, borderwidth=0)
         frame1.pack(fill=BOTH, expand=YES, side=LEFT)
@@ -65,16 +67,23 @@ class MainWindowICO:
         frame_logpath.pack(fill=X, expand=NO, side=TOP, ipady=5)
         frame_notebook = Frame(frame1_1, relief=RIDGE, borderwidth=2)
         frame_notebook.pack(fill=BOTH, expand=NO, side=TOP)
-        
+
+        self.variable = StringVar()
         Label(frame_logpath, text=" Log Path: ").pack(fill=NONE, expand=False, side=LEFT)
         #self.entry_logpath = Entry(frame_logpath)
         #self.entry_logpath.pack(fill=X, expand=YES, side=LEFT)
-        self.combobox_logpath = Combobox(frame_logpath)
-        self.combobox_logpath.pack(fill=X, expand=YES, side=LEFT)
-        self.fileName = ""
-        button_browse = Button(frame_logpath, text ='Select..',
-                               command=self.button_browse_callback)
-        button_browse.pack(fill=NONE, expand=False, side=LEFT, padx=10)
+        self.logs_history = Combobox(frame_logpath, textvariable=self.variable)
+        self.cur_history = read_history()
+        if len(self.cur_history) == 0:
+            self.cur_history = ["logs"]
+        self.logs_history['values'] = self.cur_history
+        self.logs_history.current(0)
+        self.logs_history.pack(fill=X, expand=YES, side=LEFT)
+        self.logs_history.bind("<<ComboboxSelected>>", self.logs_selected)
+
+        self.path_select = Button(frame_logpath, text ='Select..',
+                               command=self.selectPath)
+        self.path_select.pack(fill=NONE, expand=False, side=LEFT, padx=10)
         #Label(frame_logpath, text="     ").pack(fill=NONE, expand=False, side=LEFT)
         # Notebook
         # padding: the distance away from the parent frame
@@ -122,6 +131,7 @@ class MainWindowICO:
         
         frame1_2 = Frame(frame1, relief=RIDGE, borderwidth=1)
         frame1_2.pack(fill=BOTH, expand=YES, side=TOP, ipadx=2, ipady=2)
+
         self.text = Text(frame1_2, wrap='word')
         ybar = Scrollbar(frame1_2, orient=VERTICAL, command=self.text.yview )
         self.text.configure(yscrollcommand=ybar.set)
@@ -130,18 +140,14 @@ class MainWindowICO:
         
         frame2 = Frame(self.master, relief=RIDGE, borderwidth=1)
         frame2.pack(fill=BOTH, ipadx=2, ipady=2, expand=NO, side=RIGHT)
-        listbox_frame2 = Listbox(frame2)
-        ybar_frame2 = Scrollbar(frame2, orient=VERTICAL, command=listbox_frame2.yview)
-        listbox_frame2.configure(yscrollcommand=ybar_frame2.set)
-        listbox_frame2.pack( side=LEFT, expand=YES, fill=BOTH)
+        self.listbox = Listbox(frame2)
+        ybar_frame2 = Scrollbar(frame2, orient=VERTICAL, command=self.listbox.yview)
+        self.listbox.configure(yscrollcommand=ybar_frame2.set)
+        self.listbox.pack( side=LEFT, expand=YES, fill=BOTH)
         ybar_frame2.pack( side=RIGHT, fill=Y)
-        # test
-        listbox_frame2.insert(1, "Python")
-        listbox_frame2.insert(2, "Perl")
-        listbox_frame2.insert(3, "C")
-        listbox_frame2.insert(4, "PHP")
-        listbox_frame2.insert(5, "JSP")
-        listbox_frame2.insert(6, "Ruby")
+        self.bug_list = []
+        self.update_bug_list()
+        self.listbox.bind("<Double-Button-1>", self.ok)
         
         #frame3 = Frame(self.master, relief=RIDGE, borderwidth=1)
         #frame3.pack(fill=BOTH, ipadx=2, ipady=2, expand=True, side=BOTTOM)
@@ -151,7 +157,7 @@ class MainWindowICO:
         self.post_init()
 
     def general_setting(self, root):        
-        sys.stdout.write("***general_setting\n")
+        info("***general_setting")
                 #print(tkFont.families())
         default_font = tkFont.nametofont("TkDefaultFont")
         default_font.configure(family='微软雅黑', size=10)
@@ -182,9 +188,13 @@ class MainWindowICO:
         # have to update it ourselves
         root.config(background="light blue")
 
-    def post_init(self):
+    def pre_init(self):
         self.create_thread()
         self.message = {}
+
+    def post_init(self):
+        # TBD
+        info("post_init()")
 
     def button_browse_callback(self):
         """ What to do when the Browse button is pressed """
@@ -193,32 +203,95 @@ class MainWindowICO:
         options['title'] = 'Select the log directory'
         options['mustexist'] = False
         self.fileName = FileDiag.askdirectory(**options)
-        sys.stdout.write("***%s\n" % self.fileName)
+        info("***%s" % self.fileName)
         if self.fileName == "":
             return None
         else:
             return self.fileName
 
+    def logs_selected(self, *args):
+        path_ = self.logs_history.get()
+        if len(path_) > 0:
+            self.update_history(path_)
+
+    def update_bug_list(self):
+        self.listbox.delete(0, END)
+        for item in self.bug_list:
+            self.listbox.insert(END, item)
+
+    def ok(self, event):
+        info(self.listbox.index(ANCHOR))
+        info(self.listbox.get(ANCHOR))
+        lines = get_bug_info(self.listbox.get(ANCHOR))
+        self.text.delete(1.0, END)
+        s = ""
+        for l in self.bug_results_info:
+            s += l
+        s += "======================================================================================================\n\n\n"
+        # for l in lines:
+        #     s += l
+        self.text.insert('insert', s)
+        self.text.tag_config("blue", foreground="blue")
+        self.text.tag_config("red", foreground="red")
+        rules = read_rules()
+        for l in lines:
+            # a = color_keyword("", l, rules)
+            a = color_all_keyword("", l, rules)
+            if not a:
+                self.text.insert('insert', l)
+                continue
+            for (c, m) in a:
+                if c:
+                    self.text.insert('insert', m, c)
+                else:
+                    self.text.insert('insert', m)
+
+    def update_history(self, path_):
+        self.variable.set(path_)
+        if len(self.cur_history) > 10:
+            self.cur_history.pop()
+        if path_ in self.cur_history:
+            self.cur_history.remove(path_)
+        self.cur_history.insert(0, path_)
+        self.logs_history['values'] = self.cur_history
+        self.logs_history.current(0)
+        write_history(self.cur_history)
+
+    def selectPath(self):
+        path_ = FileDiag.askdirectory()
+        if len(path_) > 0:
+            self.update_history(path_)
+        info(path_)
+
     def adb_pull_logs(self):
-        print "message begin"
+        info("message begin")
         self.message["catch logs"] = self.adb_pull_fn
         self.queue.put("catch logs")
-        print "message"
+        info("message")
 
     def adb_pull_fn(self):
         path_ = os.getcwd() + os.sep + "logs" + os.sep + time.strftime("%Y%m%d-%H%M%S", time.localtime())
         self.text.delete(1.0, END)
-        print "path_", path_
+        info("path_ %s" % path_)
         self.text.insert('insert', path_ + "\n")
         # self.text.update()
         # os.system("adb pull /cache/logs/ "+path_)
         self.ADB_PULL.config(state=DISABLED, text="抓取中...")
         self.ANALYZE.config(state=DISABLED)
         self.path_select.config(state=DISABLED)
+
+        if not connectDevcie():
+            self.text.insert(END, "***adb端口没有找到，请检查设备连接状态\n")
+            self.text.see(END)
+            self.ADB_PULL.config(state=NORMAL, text="抓取日志")
+            self.ANALYZE.config(state=NORMAL, text="分析")
+            self.path_select.config(state=NORMAL, text="路径选择")
+            return
+
         cmd = "adb pull /cache/logs/ " + path_
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         for l in p.stdout:
-            print l
+            info(l)
             self.text.insert(END, l)
             # self.text.update()
             self.text.see(END)
@@ -228,7 +301,7 @@ class MainWindowICO:
         self.ANALYZE.config(state=NORMAL, text="分析")
         self.path_select.config(state=NORMAL, text="路径选择")
         self.variable.set(path_)
-        print path_
+        info(path_)
 
     def quit(self):
         self.master.quit()
@@ -281,7 +354,7 @@ class MainWindowICO:
             l = p.stdout.readline()
             if not l:
                 break
-            # print l
+            # info(l)
             self.text.insert(END, l)
             self.text.see(END)
             lines.append(l)
@@ -296,7 +369,7 @@ class MainWindowICO:
         self.config_button(NORMAL)
 
     def join_fn(self):
-        print "hahahah"
+        info("enter join_fn()")
         log_dir = self.variable.get()
         if not log_dir:
             self.bug_results_info = []
@@ -306,35 +379,26 @@ class MainWindowICO:
             self.text.tag_config("a", foreground="red")
             self.text.insert(END, "日志不存在\n", "a")
             return
-
+        self.text.insert(END, "\ntest1\n")
         if log_dir not in self.cur_history:
             self.update_history(log_dir)
-
+        self.text.insert(END, "\ntest2\n")
         self.config_button(DISABLED)
         self.text.delete(1.0, END)
-        self.text.insert(END, self.variable.get() + "\n")
+        self.text.insert(END, u"日志路径：" + self.variable.get() + "\n")
 
-        cmd = PYTHON_CMD + "extract_log.py " + log_dir
-        print "new python cmd", cmd
-        try:
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            s = ""
-            while True:
-                l = p.stdout.readline()
-                if not l:
-                    break
-                s += l
-            self.text.insert(END, s)
-            self.text.see(END)
-        except Exception, e:
-            print e
-        self.text.insert(END, "\n完成\n")
+        self.text.insert(END, "***开始合并日志，请稍等片刻...\n")
+        self.text.see(END)
+        import extract_log
+        extract_log.main(log_dir)
+
+        self.text.insert(END, "***完成\n")
         self.text.see(END)
         self.config_button(NORMAL)
-        print "try to open", log_dir
+        info("try to open %s" % log_dir)
         # os.system("start "+"\""+log_dir+"\"")
         os.startfile(log_dir)
-        print "open end", log_dir
+        info("open end %s" % log_dir)
 
     def open_log_dir_fn(self):
         log_dir = self.variable.get()
@@ -352,10 +416,10 @@ class MainWindowICO:
         os.startfile(log_dir)
 
     def create_thread(self):
+        self.thread_exit = False
+        self.queue = Queue.Queue()
         self.t = threading.Thread(target=loop, name='LoopThread', args=(self,))
         self.t.start()
-        self.queue = Queue.Queue()
-        self.thread_exit = False
 
     def destroy(self):
         # self.t.
@@ -384,7 +448,7 @@ def remove_files(dirname):
 
 def read_files(filename):
     if not os.path.isfile(filename):
-        sys.stdout.write("%s not exist\n" % filename)
+        info("%s not exist" % filename)
         return []
     with open(filename, "r") as f:
         return f.readlines()
@@ -396,18 +460,18 @@ def write_file(filename, lines):
 def get_bug_info(line):
     ss = line.split()[0]
     bug_filename = ss.replace("/", "-").replace(" ", "").replace(":", "")
-    sys.stdout.write("bug_filename=%s\n" % bug_filename)
+    info("bug_filename=%s" % bug_filename)
     return read_files("out" + os.sep + bug_filename + ".txt")
 
 def loop(argv):
     t = argv
-    print t
+    info(t)
     while not t.thread_exit:
         event = t.queue.get()
-        sys.stdout.write("Receive event=%s\n" % event)
+        info("Receive event=%s" % event)
         if t.message.has_key(event):
             t.message[event]()
-        sys.stdout.write("End event=%s\n" % event)
+        info("End event=%s" % event)
 
 def read_history():
     h = "ss_config" + os.sep + "logs_history.txt"
@@ -457,7 +521,7 @@ def read_rules():
             else:
                 nrule[l[0:index]] = [l[index + 1:]]
         elif l[0:index] == "regular":
-            print "found regular", l[index + 1:].strip()
+            info("found regular %s" % l[index + 1:].strip())
             nrule[l[0:index]] = re.compile(l[index + 1:].strip())
         else:
             nrule[l[0:index]] = l[index + 1:]
@@ -554,5 +618,4 @@ if __name__ == '__main__':
     root = Tk()
     app = MainWindowICO(root)
     root.mainloop()
-    #app.destroy()
-    root.destroy()  # optional; see description below
+    app.destroy()
