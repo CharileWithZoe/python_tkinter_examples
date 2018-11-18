@@ -3,8 +3,6 @@ import sys
 import os
 import threading, time
 import re
-import sys
-import os
 import subprocess
 import json
 from utils import *
@@ -160,7 +158,7 @@ class MainWindowICO:
         info("***general_setting")
                 #print(tkFont.families())
         default_font = tkFont.nametofont("TkDefaultFont")
-        default_font.configure(family='微软雅黑', size=10)
+        default_font.configure(family='Microsoft YaHei', size=10)
         
         self.w = 800
         self.h = 480
@@ -177,7 +175,7 @@ class MainWindowICO:
         # font to use for label widgets
         #root.option_add("*Font", "courier 12 bold")
         #root.option_add("*Button*Font", "courier 12 bold")
-        #root.option_add("*Font", default_font)
+        root.option_add("*Font", default_font)
         
         # make all widgets light blue
         root.option_add("*Background", "light blue")
