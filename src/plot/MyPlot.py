@@ -1,5 +1,5 @@
 #-*-coding:utf-8-*-
-import sys
+import os, sys
 
 if sys.version_info < (3,0,0):
     from Tkinter import *
@@ -15,9 +15,46 @@ else:
     import queue as Queue
 
 import matplotlib.pyplot as plt
-
 import numpy as np
+import json
 
+def scanJsonFiles(path):
+    jsfiles = []
+    for rt, dirs, files in os.walk(path):
+        for f in files:
+            ff = os.path.join(rt,f)
+            if ".json" == os.path.splitext(ff)[-1]:
+                jsfiles.append(ff)
+                print "json file:", ff
+    return jsfiles
+
+def writeJsonFile(filename, data):
+    with open(filename, 'w') as json_file:
+        json.dump(data, json_file, ensure_ascii=False, indent=4)
+
+def readJsonFile(filename):
+    data = {}
+    with open(filename, 'r') as json_file:
+        data = json.load(json_file)
+    return data
+
+def generateTestJsonFile():
+    x = np.arange(0, 3, .01)
+    y = 2 * np.sin(2 * np.pi * x)
+    y1 = np.tan(2 * np.pi * x)
+    y2 = np.square(2 * np.pi * x)
+    data = {"x" : list(x), "y" : list(y)}
+    writeJsonFile(sys.path[0] + os.sep + "testdata" + os.sep + "sin.json", data)
+    data = {"x": list(x), "y": list(y1)}
+    writeJsonFile(sys.path[0] + os.sep + "testdata" + os.sep + "tan.json", data)
+    data = {"x": list(x), "y": list(y2)}
+    writeJsonFile(sys.path[0] + os.sep + "testdata" + os.sep + "square.json", data)
+
+def readTestJsonFile(filename):
+    data = readJsonFile(filename)
+    x = data["x"]
+    y = data["y"]
+    return x,y
 
 class PlotWithStyle:
     STYLE_NORMAL    = 1  # 柱状图和散点图都一样
@@ -32,9 +69,14 @@ class PlotWithStyle:
 
     def __init__(self, master):
         self.master = master
-        self.plot_style = self.STYLE_NORMAL
+        self.plot_style = None
+        self.jsonfile = None
         self.datax = []
         self.datay = []
+
+        master.title('MyPlot')
+        # root.resizable(width=False, height=False)
+        master.geometry('%dx%d+200+100' % (600, 300))
 
         frame_1 = Frame(self.master, relief=RIDGE, borderwidth=2)
         frame_1.pack(fill=X, expand=NO, side=TOP, ipady=5)
@@ -48,7 +90,17 @@ class PlotWithStyle:
         self.styleChosen['values'] = self.STYLE_DICT.keys()     # 设置下拉列表的值
         self.styleChosen.pack(side=TOP, fill=BOTH, expand=YES)
         self.styleChosen.current(0)    # 设置下拉列表默认显示的值，0为 numberChosen['values'] 的下标值
+        self.plot_style = self.STYLE_DICT.get(self.styleChosen['values'][0])
         self.styleChosen.bind("<<ComboboxSelected>>", self.style_selected)
+
+        self.allJsonFiles = scanJsonFiles(sys.path[0])
+        Label(frame_2, text=" Data: ").pack(fill=NONE, expand=False, side=LEFT)
+        self.dataChosen = Combobox(frame_2, state='readonly')
+        self.dataChosen['values'] = self.allJsonFiles    # 设置下拉列表的值
+        self.dataChosen.pack(side=TOP, fill=BOTH, expand=YES)
+        self.dataChosen.current(0)    # 设置下拉列表默认显示的值，0为 numberChosen['values'] 的下标值
+        self.jsonfile = self.dataChosen['values'][0]
+        self.dataChosen.bind("<<ComboboxSelected>>", self.data_selected)
 
         button = Button(master=frame_3, text="Quit", command=self._quit)
         button.pack(side=LEFT)
@@ -58,12 +110,11 @@ class PlotWithStyle:
     def style_selected(self, *args):
         var = self.styleChosen.get()
         self.plot_style = self.STYLE_DICT.get(var)
-        print "choose ", var, ", plot_style=%d" % self.plot_style
+        print "style_selected(), choose ", var, ", plot_style=%d" % self.plot_style
 
-    def style_selected(self, *args):
-        var = self.styleChosen.get()
-        self.plot_style = self.STYLE_DICT.get(var)
-        print "choose ", var, ", plot_style=%d" % self.plot_style
+    def data_selected(self, *args):
+        self.jsonfile = self.dataChosen.get()
+        print "data_selected(), choose ", self.jsonfile
 
     def plot_with_style(self, x, y):
         print "plot_with_style() plot_style=", self.plot_style
@@ -76,21 +127,25 @@ class PlotWithStyle:
         plt.show()
 
     def _quit(self):
-        root.quit()     # stops mainloop
-        root.destroy()  # this is necessary on Windows to prevent
-                        # Fatal Python Error: PyEval_RestoreThread: NULL tstate
+        root.quit()
+        root.destroy()
 
     def destroy(self):
-        # self.t.
         print "destroy()"
 
     def _draw(self):
+        if self.plot_style is None:
+            print "no plot style for plot"
+            return
+        if self.jsonfile is None:
+            print "no jsonfile to plot"
+            return
         print "_draw() plot_style=", self.plot_style
-        x = np.arange(0, 3, .01)
-        y = 2 * np.sin(2 * np.pi * x)
+        x, y = readTestJsonFile(self.jsonfile)
         self.plot_with_style(x, y)
 
 if __name__ == '__main__':
+    generateTestJsonFile()
     reload(sys)
     sys.setdefaultencoding('utf8')
     root = Tk()
