@@ -39,22 +39,18 @@ def readJsonFile(filename):
     return data
 
 def generateTestJsonFile():
-    x = np.arange(0, 3, .01)
-    y = 2 * np.sin(2 * np.pi * x)
-    y1 = np.tan(2 * np.pi * x)
-    y2 = np.square(2 * np.pi * x)
-    data = {"x" : list(x), "y" : list(y)}
-    writeJsonFile(sys.path[0] + os.sep + "testdata" + os.sep + "sin.json", data)
-    data = {"x": list(x), "y": list(y1)}
-    writeJsonFile(sys.path[0] + os.sep + "testdata" + os.sep + "tan.json", data)
-    data = {"x": list(x), "y": list(y2)}
-    writeJsonFile(sys.path[0] + os.sep + "testdata" + os.sep + "square.json", data)
-
-def readTestJsonFile(filename):
-    data = readJsonFile(filename)
-    x = data["x"]
-    y = data["y"]
-    return x,y
+    x = np.arange(0, 1, .01)
+    y1 = np.power(x, 1)
+    y2 = np.power(x, 2)
+    y3 = np.power(x, 3)
+    data1 = {"name": "power_1", "x" : list(x), "y" : list(y1)}
+    writeJsonFile(sys.path[0] + os.sep + "testdata" + os.sep + "power_1.json", [data1])
+    data2 = {"name": "power_2", "x": list(x), "y": list(y2)}
+    writeJsonFile(sys.path[0] + os.sep + "testdata" + os.sep + "power_2.json", [data2])
+    data3 = {"name": "power_3", "x": list(x), "y": list(y3)}
+    writeJsonFile(sys.path[0] + os.sep + "testdata" + os.sep + "power_3.json", [data3])
+    data = [data1, data2, data3]
+    writeJsonFile(sys.path[0] + os.sep + "testdata" + os.sep + "power_123.json", data)
 
 class PlotWithStyle:
     STYLE_NORMAL    = 1  # 柱状图和散点图都一样
@@ -126,6 +122,25 @@ class PlotWithStyle:
             plt.bar(x, y)
         plt.show()
 
+    def plot_in_subplot(self, data):
+        plt.figure(1)
+        num = len(data)
+        for i in range(0, len(data)):
+            plt.subplot(num, 1, i+1)
+            plt.plot(data[i]['x'], data[i]['y'], label=data[i]['name'])
+            plt.title(data[i]['name'])
+            plt.grid(True)
+        plt.show()
+
+    def plot_in_onefigure(self, data):
+        plt.figure(2)
+        plt.subplot(1, 1, 1)
+        for i in range(0, len(data)):
+            plt.plot(data[i]['x'], data[i]['y'], label = data[i]['name'])
+        plt.legend(loc='upper left')
+        plt.grid(True)
+        plt.show()
+
     def _quit(self):
         root.quit()
         root.destroy()
@@ -141,8 +156,9 @@ class PlotWithStyle:
             print "no jsonfile to plot"
             return
         print "_draw() plot_style=", self.plot_style
-        x, y = readTestJsonFile(self.jsonfile)
-        self.plot_with_style(x, y)
+        data = readJsonFile(self.jsonfile)
+        self.plot_in_subplot(data)
+        self.plot_in_onefigure(data)
 
 if __name__ == '__main__':
     generateTestJsonFile()
