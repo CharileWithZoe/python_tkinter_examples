@@ -66,7 +66,6 @@ def getAndroidVersion():
     except Exception as e:
         info("getAndroidVersion() error " + e)
 
-
 def getDeviceName():
     try:
         if connectDevcie():

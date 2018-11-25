@@ -7,6 +7,7 @@ if sys.version_info < (3,0,0):
     import tkFont
     import tkFileDialog as FileDiag
     import Queue
+    import matplotlib.dates as mdates
 else:
     from tkinter import *
     from tkinter.ttk import *
@@ -141,6 +142,39 @@ class PlotWithStyle:
         plt.grid(True)
         plt.show()
 
+    def plot_with_date(self, data):
+        from datetime import datetime
+
+        plt.figure(3)
+        plt.subplot(1, 1, 1)
+        for i in range(0, len(data)):
+            # "11-13 07:16:30.577",
+            # datetime.strptime(s, '%m-%d %H:%M:%S').date()
+            # xs = [datetime.strptime(d, '%m-%d %H:%M:%S').date() for d in data[i]['x']]
+            xs = []
+            for d in data[i]['x']:
+                d = "2018-" + d[0:-4]
+                temp = datetime.strptime(d, '%Y-%m-%d %H:%M:%S')
+                xs.append(temp)
+            print xs
+            ys = []
+            for dd in data[i]['y']:
+                dd = dd[0:-1]
+                temp = int(dd)
+                ys.append(temp)
+            print ys
+            plt.plot(xs, ys, label = data[i]['name'])
+
+        # 配置横坐标
+        #plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d %H:%M'))
+        # if set, only the major is show
+        #plt.gca().xaxis.set_major_locator(mdates.DayLocator())
+        plt.gcf().autofmt_xdate()  # 自动旋转日期标记
+        plt.legend(loc='upper right')
+        plt.grid(True)
+        plt.show()
+
     def _quit(self):
         root.quit()
         root.destroy()
@@ -157,8 +191,9 @@ class PlotWithStyle:
             return
         print "_draw() plot_style=", self.plot_style
         data = readJsonFile(self.jsonfile)
-        self.plot_in_subplot(data)
-        self.plot_in_onefigure(data)
+        #self.plot_in_subplot(data)
+        #self.plot_in_onefigure(data)
+        self.plot_with_date(data)
 
 if __name__ == '__main__':
     generateTestJsonFile()
