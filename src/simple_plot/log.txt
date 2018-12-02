@@ -1,0 +1,4 @@
+2018/12/02 22:33:00 [INFO   ] args.verbose : False
+2018/12/02 22:33:02 [DEBUG  ] update_title_pos
+2018/12/02 22:33:02 [DEBUG  ] findfont: Matching :family=sans-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=10.0 to DejaVu Sans ('C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\_MEI629162\\mpl-data\\fonts\\ttf\\DejaVuSans.ttf') with score of 0.050000.
+2018/12/02 22:33:02 [DEBUG  ] update_title_pos
